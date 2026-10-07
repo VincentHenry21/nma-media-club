@@ -128,5 +128,5 @@ steps: [
   {t:{en:"Pick your team and publish",my:"အဖွဲ့ရွေးပြီး ထုတ်ဝေရန်"}, d:{en:"Join the video, design, or writing and social team, get your member ID card, and start publishing with the club.",my:"ဗီဒီယို၊ ဒီဇိုင်း သို့မဟုတ် စာရေးသားခြင်းနှင့် ဆိုရှယ်အဖွဲ့ကို ရွေးချယ်ပြီး အဖွဲ့ဝင်ကတ် ရယူကာ ကလပ်နှင့်အတူ စတင်ထုတ်ဝေပါ။"}}
 ]};
 
-var CONTACT_DEFAULTS = { email: "thitsarnextdoor@gmail.com", phone: "09457322394" };
+var CONTACT_DEFAULTS = { email: "nmamediaclub@gmail.com", phone: "09457322394" };
 
