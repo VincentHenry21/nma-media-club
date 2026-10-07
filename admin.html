@@ -72,9 +72,10 @@
 <div class="wrap">
   <div id="gate">
     <h2>Admin login</h2>
-    <p>Enter the admin passcode to edit the website.</p>
-    <div id="gateErr">Wrong passcode. Try again.</div>
-    <input type="password" id="passInput" placeholder="Passcode" autocomplete="off">
+    <p>Sign in with the admin email and password.</p>
+    <div id="gateErr">Wrong email or password. Try again.</div>
+    <input type="email" id="emailInput" placeholder="Admin email" autocomplete="username" style="margin-bottom:10px">
+    <input type="password" id="passInput" placeholder="Password" autocomplete="current-password">
     <button class="btn btn-primary" id="loginBtn" style="width:100%">Unlock</button>
   </div>
 
@@ -113,8 +114,10 @@
 </div>
 
 <script>
-/* Change the admin passcode here. Keep it private. */
-var ADMIN_PASSCODE = "nma2026";
+/* Admin login. NOTE: this page is public, so anyone who views the page source
+   can see these values. Do NOT reuse a real email password here. */
+var ADMIN_EMAIL = "thitsarnextdoor@gmail.com";
+var ADMIN_PASSWORD = "12345678";
 
 var FB_CONFIG = {
   apiKey: "AIzaSyC5UfJnl5ygcUSeQihGdQfXOBscocYs8_w",
@@ -144,8 +147,9 @@ function showApp() {
 }
 if (unlocked) showApp();
 function tryLogin() {
-  var v = document.getElementById("passInput").value;
-  if (v === ADMIN_PASSCODE) {
+  var em = document.getElementById("emailInput").value.trim().toLowerCase();
+  var pw = document.getElementById("passInput").value;
+  if (em === ADMIN_EMAIL && pw === ADMIN_PASSWORD) {
     try { sessionStorage.setItem("nma_mc_admin", "1"); } catch (e) {}
     showApp();
   } else {
