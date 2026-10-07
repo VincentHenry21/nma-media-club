@@ -168,23 +168,50 @@
     .org-children { flex-direction: column; align-items: center; padding-top: 0; gap: 12px; }
     .org-stem { height: 18px; }
   }
+
+/* ---------- Dark mode ---------- */
+body.dark{--ink:#F2EDE4;--muted:#A79D8C;--cream:#14110D;--line:#3A332A;--white:#1F1A14;--orange:#F0660A;--orange-deep:#D05E10;background:#14110D;color:#F2EDE4}
+.iconbtn{width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:var(--white);color:var(--ink);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex:none}
+.iconbtn:hover{border-color:var(--orange);color:var(--orange)}
+.iconbtn .ic-sun{display:none}
+body.dark .iconbtn .ic-moon{display:none}
+body.dark .iconbtn .ic-sun{display:block}
+body.dark .card{background:#1F1A14}
+body.dark .card .icon{background:#2B2318}
+body.dark .tabbtn{background:#1F1A14;border-color:#3A332A;color:#CFC6B6}
+body.dark .tabbtn.on{background:var(--orange);border-color:var(--orange);color:#fff}
+body.dark .orgline{background:#3A332A}
+body.dark .contact-box{background:#0E0B08;border-color:#3A2E1C}
+body.dark footer{background:#0E0B08}
+body.dark .idcard-front{background:#fff}
+body.dark img.school-logo{background:#fff;border-radius:8px;padding:3px}
+body.dark table.data th{background:#0E0B08}
+body.dark .badge{background:#2B2113}
+body.dark .field input::placeholder,body.dark .field textarea::placeholder{color:#7A7163}
+body.dark .reg-ok{background:#0E2A18;border-color:#1E5A34;color:#7BDCA0}
+body.dark .reg-err{background:#2A1210;border-color:#5A2420;color:#F0908A}
 </style>
 </head>
 <body>
+<script>try{if(localStorage.getItem("nma_mc_theme")==="dark")document.body.classList.add("dark");}catch(e){}</script>
 
 <nav>
   <div class="wrap nav-inner">
-    <a class="nav-brand" href="#" data-tablink="about"><img src="assets/logo.jpg" alt="Media Club logo"><span>NMA Media Club</span></a>
+    <a class="nav-brand" href="#" data-tablink="about"><img src="assets/logo.jpg" alt="Media Club logo" class="logo-swap"><span>NMA Media Club</span></a>
     <div class="nav-right">
       <a class="admin-link" href="admin.html" data-i18n="nav_admin">Admin</a>
       <button class="lang-toggle" id="langToggle">မြန်မာ</button>
+      <button class="iconbtn" id="themeBtn" aria-label="Toggle dark mode" title="Dark mode">
+      <svg class="ic-moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+      <svg class="ic-sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+    </button>
     </div>
   </div>
 </nav>
 
 <header class="hero">
   <div class="wrap">
-    <img class="logo" src="assets/logo.jpg" alt="NMA College Media Club logo">
+    <img class="logo logo-swap" src="assets/logo.jpg" alt="NMA College Media Club logo">
     <div><span class="badge">NMA COLLEGE &middot; STUDENT MEDIA CLUB</span></div>
     <h1 data-i18n="hero_title">The story of NMA, told by its students.</h1>
     <p class="sub" data-i18n="hero_sub">We are the NMA College Media Club: a student-run team shooting, editing, and publishing photo and video stories from campus life.</p>
@@ -317,8 +344,8 @@
 
 <footer>
   <div class="wrap foot-inner">
-    <img src="assets/logo.jpg" alt="Media Club logo">
-    <img src="assets/school-logo.jpg" alt="NMA College logo" style="width:64px">
+    <img src="assets/logo.jpg" alt="Media Club logo" class="logo-swap">
+    <img class="school-logo" src="assets/school-logo.jpg" alt="NMA College logo" style="width:64px">
     <div><div class="fbrand">NMA College Media Club</div>
     <div style="font-size:13px;color:var(--muted)" data-i18n="foot_tag">The story of NMA, told by its students.</div></div>
     <div class="fmeta"><span id="footEmail">nmamediaclub@gmail.com</span><br><span id="footPhone">09457322394</span><br>&copy; 2026 NMA College Media Club</div>
@@ -327,6 +354,24 @@
 
 <script src="js/defaults.js"></script>
 <script>
+
+/* Theme: light / dark */
+var THEME_KEY = "nma_mc_theme";
+function applyTheme(t) {
+  document.body.classList.toggle("dark", t === "dark");
+  var dark = (t === "dark");
+  var imgs = document.querySelectorAll("img.logo-swap");
+  for (var i = 0; i < imgs.length; i++) { imgs[i].src = dark ? "assets/logo-dark.jpg" : "assets/logo.jpg"; }
+  try { localStorage.setItem(THEME_KEY, t); } catch (e) {}
+}
+try { applyTheme(localStorage.getItem(THEME_KEY) || "light"); } catch (e) { applyTheme("light"); }
+document.addEventListener("DOMContentLoaded", function () {
+  var tb = document.getElementById("themeBtn");
+  if (tb) tb.addEventListener("click", function () {
+    applyTheme(document.body.classList.contains("dark") ? "light" : "dark");
+  });
+});
+
 /* ================= FIREBASE ================= */
 var FB_CONFIG = {
   apiKey: "AIzaSyC5UfJnl5ygcUSeQihGdQfXOBscocYs8_w",

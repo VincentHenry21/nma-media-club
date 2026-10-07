@@ -57,14 +57,33 @@
   table.regs td .del { color:#a33; cursor:pointer; font-weight:700; background:none; border:none; font-size:13px; }
   .empty-note { color:var(--muted); font-size:14px; padding:20px; text-align:center; }
   @media (max-width:700px){ .frow{grid-template-columns:1fr;} }
+
+/* ---------- Dark mode ---------- */
+body.dark{--ink:#F2EDE4;--muted:#A79D8C;--cream:#14110D;--line:#3A332A;--white:#1F1A14;--orange:#F0660A;--orange-deep:#D05E10;background:#14110D;color:#F2EDE4}
+.iconbtn{width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:var(--white);color:var(--ink);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex:none}
+.iconbtn:hover{border-color:var(--orange);color:var(--orange)}
+.iconbtn .ic-sun{display:none}
+body.dark .iconbtn .ic-moon{display:none}
+body.dark .iconbtn .ic-sun{display:block}
+body.dark header.top{background:#1F1A14;border-color:#3A332A}
+body.dark table.data th{background:#0E0B08}
+body.dark input,body.dark select,body.dark textarea{background:#14110D;border-color:#3A332A;color:#F2EDE4}
+body.dark .edrow{background:#1F1A14;border-color:#3A332A}
+body.dark .sec{background:#1F1A14}
+body.dark .reg{border-color:#3A332A}
 </style>
 </head>
 <body>
+<script>try{if(localStorage.getItem("nma_mc_theme")==="dark")document.body.classList.add("dark");}catch(e){}</script>
 
 <header class="top">
   <div class="wrap">
-    <img src="assets/logo.jpg" alt="">
+    <img src="assets/logo.jpg" alt="" class="logo-swap">
     <a href="index.html">NMA Media Club</a><span style="color:#b9b2a8;font-size:13px">Admin portal</span>
+    <button class="iconbtn" id="themeBtn" aria-label="Toggle dark mode" title="Dark mode">
+      <svg class="ic-moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+      <svg class="ic-sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+    </button>
     <a class="back" href="index.html">← Back to site</a>
   </div>
 </header>
@@ -114,6 +133,24 @@
 </div>
 
 <script>
+
+/* Theme: light / dark */
+var THEME_KEY = "nma_mc_theme";
+function applyTheme(t) {
+  document.body.classList.toggle("dark", t === "dark");
+  var dark = (t === "dark");
+  var imgs = document.querySelectorAll("img.logo-swap");
+  for (var i = 0; i < imgs.length; i++) { imgs[i].src = dark ? "assets/logo-dark.jpg" : "assets/logo.jpg"; }
+  try { localStorage.setItem(THEME_KEY, t); } catch (e) {}
+}
+try { applyTheme(localStorage.getItem(THEME_KEY) || "light"); } catch (e) { applyTheme("light"); }
+document.addEventListener("DOMContentLoaded", function () {
+  var tb = document.getElementById("themeBtn");
+  if (tb) tb.addEventListener("click", function () {
+    applyTheme(document.body.classList.contains("dark") ? "light" : "dark");
+  });
+});
+
 /* Admin login. NOTE: this page is public, so anyone who views the page source
    can see these values. Do NOT reuse a real email password here. */
 var ADMIN_EMAIL = "thitsarnextdoor@gmail.com";
