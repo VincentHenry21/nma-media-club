@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Media Club Admin</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="assets/logo.jpg">
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+<script src="js/defaults.js"></script>
+<style>
+  :root { --orange:#E95B05; --deep-orange:#B34A08; --ink:#1C1C1E; --muted:#6b6259; --cream:#FDF6EF; --line:#E9E0D4; --white:#fff; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:"Helvetica Neue",Helvetica,Arial,"Noto Sans Myanmar",sans-serif; color:var(--ink); background:var(--cream); line-height:1.6; }
+  .wrap { max-width:960px; margin:0 auto; padding:0 20px; }
+  header.top { background:var(--ink); color:#fff; padding:14px 0; }
+  header.top .wrap { display:flex; align-items:center; gap:12px; }
+  header.top img { width:34px; border-radius:8px; }
+  header.top a { color:#fff; text-decoration:none; font-weight:800; }
+  header.top .back { margin-left:auto; font-size:13px; color:#b9b2a8; text-decoration:none; }
+
+  #gate { max-width:420px; margin:80px auto; background:#fff; border:1px solid var(--line); border-radius:16px; padding:36px; text-align:center; }
+  #gate h2 { margin-bottom:8px; }
+  #gate p { color:var(--muted); font-size:14px; margin-bottom:18px; }
+  #gate input { width:100%; font:inherit; font-size:16px; padding:12px 14px; border:1px solid var(--line); border-radius:10px; margin-bottom:12px; text-align:center; }
+  #gateErr { display:none; color:#a33; font-size:14px; margin-bottom:10px; }
+
+  #app { display:none; padding:28px 0 60px; }
+  .atabs { display:flex; gap:8px; margin-bottom:20px; }
+  .atab { border:1px solid var(--line); background:#fff; padding:10px 22px; border-radius:24px; font-weight:700; font-size:14px; cursor:pointer; color:var(--muted); }
+  .atab.active { background:var(--orange); border-color:var(--orange); color:#fff; }
+  .apage { display:none; } .apage.active { display:block; }
+
+  .card { background:#fff; border:1px solid var(--line); border-radius:14px; padding:24px; margin-bottom:16px; }
+  .card h3 { font-size:16px; margin-bottom:4px; }
+  .card .hint { font-size:13px; color:var(--muted); margin-bottom:14px; }
+  .frow { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px; }
+  .field label { display:block; font-size:12px; font-weight:700; color:var(--muted); margin-bottom:4px; }
+  .field input, .field textarea, .field select { width:100%; font:inherit; font-size:14px; border:1px solid var(--line); border-radius:8px; padding:9px 12px; }
+  .field textarea { resize:vertical; }
+  .list-item { border:1px dashed var(--line); border-radius:10px; padding:14px; margin-bottom:12px; background:#fffdf9; }
+  .list-item .item-head { display:flex; align-items:center; margin-bottom:10px; }
+  .list-item .item-head strong { font-size:14px; }
+  .list-item .item-head select { margin-left:auto; font:inherit; font-size:13px; border:1px solid var(--line); border-radius:8px; padding:6px 10px; }
+
+  .btn { display:inline-block; font:inherit; font-weight:700; font-size:15px; padding:12px 26px; border-radius:10px; cursor:pointer; border:none; }
+  .btn-primary { background:var(--orange); color:#fff; }
+  .btn-primary:hover { background:var(--deep-orange); }
+  .btn-primary:disabled { opacity:.6; }
+  .btn-ghost { background:#fff; border:1px solid var(--line); color:var(--ink); margin-left:10px; }
+  #saveMsg { margin-left:12px; font-size:14px; }
+
+  table.regs { width:100%; border-collapse:collapse; font-size:13px; background:#fff; }
+  table.regs th, table.regs td { border:1px solid var(--line); padding:8px 10px; text-align:left; vertical-align:top; }
+  table.regs th { background:var(--ink); color:#fff; }
+  table.regs td .del { color:#a33; cursor:pointer; font-weight:700; background:none; border:none; font-size:13px; }
+  .empty-note { color:var(--muted); font-size:14px; padding:20px; text-align:center; }
+  @media (max-width:700px){ .frow{grid-template-columns:1fr;} }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <img src="assets/logo.jpg" alt="">
+    <a href="index.html">NMA Media Club</a><span style="color:#b9b2a8;font-size:13px">Admin portal</span>
+    <a class="back" href="index.html">← Back to site</a>
+  </div>
+</header>
+
+<div class="wrap">
+  <div id="gate">
+    <h2>Admin login</h2>
+    <p>Enter the admin passcode to edit the website.</p>
+    <div id="gateErr">Wrong passcode. Try again.</div>
+    <input type="password" id="passInput" placeholder="Passcode" autocomplete="off">
+    <button class="btn btn-primary" id="loginBtn" style="width:100%">Unlock</button>
+  </div>
+
+  <div id="app">
+    <div class="atabs">
+      <button class="atab active" data-apage="content">Site content</button>
+      <button class="atab" data-apage="regs">Registrations <span id="regCount"></span></button>
+    </div>
+
+    <div class="apage active" id="apage-content">
+      <div class="card">
+        <h3>How this works</h3>
+        <p class="hint">Edit any text below (English and Myanmar), then press Save. Changes go live on the website immediately. Lists like pillars and team roles can be edited in place; the site updates to match.</p>
+        <button class="btn btn-primary" id="saveBtn">Save all changes</button>
+        <button class="btn btn-ghost" id="reloadBtn">Reload saved</button>
+        <span id="saveMsg"></span>
+      </div>
+      <div id="editorForm"></div>
+      <div class="card">
+        <button class="btn btn-primary" id="saveBtn2">Save all changes</button>
+        <span id="saveMsg2"></span>
+      </div>
+    </div>
+
+    <div class="apage" id="apage-regs">
+      <div class="card">
+        <h3>Join-form registrations</h3>
+        <p class="hint">Everyone who submits the Join tab form appears here. <button class="btn btn-ghost" id="refreshRegs" style="margin:0;padding:6px 14px;font-size:13px">Refresh</button></p>
+        <div style="overflow-x:auto"><table class="regs" id="regTable">
+          <thead><tr><th>Date</th><th>Name</th><th>Program</th><th>Year</th><th>Team</th><th>Phone</th><th>Email</th><th>Sample</th><th>Why join</th><th></th></tr></thead>
+          <tbody id="regBody"><tr><td colspan="10" class="empty-note">Loading…</td></tr></tbody>
+        </table></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* Change the admin passcode here. Keep it private. */
+var ADMIN_PASSCODE = "nma2026";
+
+var FB_CONFIG = {
+  apiKey: "AIzaSyC5UfJnl5ygcUSeQihGdQfXOBscocYs8_w",
+  authDomain: "summit-academy-b8968.firebaseapp.com",
+  projectId: "summit-academy-b8968",
+  storageBucket: "summit-academy-b8968.firebasestorage.app",
+  messagingSenderId: "532362317311",
+  appId: "1:532362317311:web:2d391346ec89a5215cebca"
+};
+var db = null;
+try {
+  if (typeof firebase !== "undefined") {
+    firebase.initializeApp(FB_CONFIG);
+    db = firebase.firestore();
+  }
+} catch (e) { db = null; }
+
+/* ---------- gate ---------- */
+var unlocked = false;
+try { unlocked = sessionStorage.getItem("nma_mc_admin") === "1"; } catch (e) {}
+function showApp() {
+  document.getElementById("gate").style.display = "none";
+  document.getElementById("app").style.display = "block";
+  buildEditor();
+  loadRemoteIntoEditor();
+  loadRegs();
+}
+if (unlocked) showApp();
+function tryLogin() {
+  var v = document.getElementById("passInput").value;
+  if (v === ADMIN_PASSCODE) {
+    try { sessionStorage.setItem("nma_mc_admin", "1"); } catch (e) {}
+    showApp();
+  } else {
+    document.getElementById("gateErr").style.display = "block";
+  }
+}
+document.getElementById("loginBtn").addEventListener("click", tryLogin);
+document.getElementById("passInput").addEventListener("keydown", function (e) { if (e.key === "Enter") tryLogin(); });
+
+/* ---------- admin tabs ---------- */
+document.querySelectorAll(".atab").forEach(function (b) {
+  b.addEventListener("click", function () {
+    document.querySelectorAll(".atab").forEach(function (x) { x.classList.toggle("active", x === b); });
+    document.querySelectorAll(".apage").forEach(function (p) { p.classList.toggle("active", p.id === "apage-" + b.getAttribute("data-apage")); });
+  });
+});
+
+/* ---------- editor schema ---------- */
+var TEXT_FIELDS = [
+  ["hero_title", "Hero title"], ["hero_sub", "Hero subtitle", 1],
+  ["about_sub", "About paragraph", 1],
+  ["vision_d", "Vision text", 1], ["mission_d", "Mission text", 1],
+  ["team_sub", "Team intro", 1], ["team_note_d", "Members note", 1],
+  ["id_d", "Member ID text", 1],
+  ["join_sub", "Join intro", 1],
+  ["form_t", "Registration form title"], ["form_d", "Registration form subtitle"],
+  ["contact_t", "Contact box title"], ["contact_d", "Contact box subtitle"],
+  ["foot_tag", "Footer tagline"]
+];
+var SINGLE_FIELDS = [
+  ["contact_email", "Contact email"], ["contact_phone", "Contact phone"]
+];
+var LIST_SCHEMAS = [
+  { key: "why", label: "Why items", icon: true },
+  { key: "rhythm", label: "Weekly rhythm", icon: false },
+  { key: "pillars", label: "Content pillars", icon: true },
+  { key: "platforms", label: "Platforms", icon: true, nameObj: true },
+  { key: "team", label: "Team roles", icon: false },
+  { key: "steps", label: "Join steps", icon: false }
+];
+var ICON_KEYS = Object.keys(ICONS);
+
+function esc(s) { return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
+
+function buildEditor() {
+  var h = "";
+  h += '<div class="card"><h3>Main text</h3><p class="hint">Headlines and paragraphs across the site.</p>';
+  TEXT_FIELDS.forEach(function (f) {
+    var key = f[0], label = f[1], area = f[2];
+    h += '<div class="frow">'
+      + '<div class="field"><label>' + esc(label) + ' (EN)</label>'
+      + (area ? '<textarea rows="3" data-k="' + key + '" data-l="en"></textarea>' : '<input data-k="' + key + '" data-l="en">') + '</div>'
+      + '<div class="field"><label>' + esc(label) + ' (MY)</label>'
+      + (area ? '<textarea rows="3" data-k="' + key + '" data-l="my"></textarea>' : '<input data-k="' + key + '" data-l="my">') + '</div>'
+      + '</div>';
+  });
+  SINGLE_FIELDS.forEach(function (f) {
+    h += '<div class="frow"><div class="field"><label>' + esc(f[1]) + '</label><input data-single="' + f[0] + '"></div><div></div></div>';
+  });
+  h += '</div>';
+
+  LIST_SCHEMAS.forEach(function (ls) {
+    h += '<div class="card" data-list="' + ls.key + '"><h3>' + esc(ls.label) + '</h3><p class="hint">Edit in place. Order on the site follows the order here.</p><div class="list-items"></div></div>';
+  });
+  document.getElementById("editorForm").innerHTML = h;
+
+  LIST_SCHEMAS.forEach(function (ls) {
+    var box = document.querySelector('[data-list="' + ls.key + '"] .list-items');
+    var items = DEFAULT_LISTS[ls.key] || [];
+    var ih = "";
+    items.forEach(function (it, idx) {
+      var nm = it.name, nameEn = "", nameMy = "";
+      if (ls.nameObj && nm) {
+        if (typeof nm === "object") { nameEn = nm.en || ""; nameMy = nm.my || ""; }
+        else { nameEn = nm; nameMy = nm; }
+      }
+      ih += '<div class="list-item" data-idx="' + idx + '"><div class="item-head"><strong>#' + (idx + 1) + '</strong>';
+      if (ls.icon) {
+        ih += '<select data-f="icon">' + ICON_KEYS.map(function (k) {
+          return '<option value="' + k + '"' + (it.icon === k ? " selected" : "") + '>' + k + '</option>';
+        }).join("") + '</select>';
+      }
+      ih += '</div>';
+      if (ls.nameObj) {
+        ih += '<div class="frow"><div class="field"><label>Name (EN)</label><input data-f="nameEn" value="' + esc(nameEn) + '"></div>'
+          + '<div class="field"><label>Name (MY)</label><input data-f="nameMy" value="' + esc(nameMy) + '"></div></div>';
+      }
+      var tEn = (it.t && it.t.en) || "", tMy = (it.t && it.t.my) || "";
+      var dEn = (it.d && it.d.en) || "", dMy = (it.d && it.d.my) || "";
+      var mEn = (it.m && it.m.en) || "", mMy = (it.m && it.m.my) || "";
+      ih += '<div class="frow"><div class="field"><label>Title (EN)</label><input data-f="tEn" value="' + esc(tEn) + '"></div>'
+        + '<div class="field"><label>Title (MY)</label><input data-f="tMy" value="' + esc(tMy) + '"></div></div>'
+        + '<div class="frow"><div class="field"><label>Text (EN)</label><textarea rows="2" data-f="dEn">' + esc(dEn) + '</textarea></div>'
+        + '<div class="field"><label>Text (MY)</label><textarea rows="2" data-f="dMy">' + esc(dMy) + '</textarea></div></div>';
+      if (it.m) {
+        ih += '<div class="frow"><div class="field"><label>Meta (EN)</label><input data-f="mEn" value="' + esc(mEn) + '"></div>'
+          + '<div class="field"><label>Meta (MY)</label><input data-f="mMy" value="' + esc(mMy) + '"></div></div>';
+      }
+      ih += '</div>';
+    });
+    box.innerHTML = ih;
+  });
+}
+
+function fillEditor(doc) {
+  var str = (doc && doc.str) || { en: {}, my: {} };
+  var lists = doc || {};
+  document.querySelectorAll("#editorForm [data-k]").forEach(function (el) {
+    var k = el.getAttribute("data-k"), l = el.getAttribute("data-l");
+    var v = (str[l] && str[l][k] !== undefined) ? str[l][k] : (DEFAULT_STR[l][k] || "");
+    el.value = v;
+  });
+  document.querySelectorAll("#editorForm [data-single]").forEach(function (el) {
+    var k = el.getAttribute("data-single");
+    el.value = (doc && doc[k] !== undefined) ? doc[k] : (k === "contact_email" ? CONTACT_DEFAULTS.email : CONTACT_DEFAULTS.phone);
+  });
+  LIST_SCHEMAS.forEach(function (ls) {
+    var items = (lists[ls.key] && lists[ls.key].length) ? lists[ls.key] : (DEFAULT_LISTS[ls.key] || []);
+    var box = document.querySelector('[data-list="' + ls.key + '"] .list-items');
+    box.querySelectorAll(".list-item").forEach(function (row, idx) {
+      var it = items[idx] || {};
+      var q = function (s) { return row.querySelector('[data-f="' + s + '"]'); };
+      if (ls.icon && q("icon") && it.icon) q("icon").value = it.icon;
+      if (ls.nameObj) {
+        var nm = it.name;
+        if (q("nameEn")) q("nameEn").value = (nm && typeof nm === "object") ? (nm.en || "") : (nm || "");
+        if (q("nameMy")) q("nameMy").value = (nm && typeof nm === "object") ? (nm.my || "") : (nm || "");
+      }
+      var tEn = it.t ? (it.t.en || "") : "", tMy = it.t ? (it.t.my || "") : "";
+      var dEn = it.d ? (it.d.en || "") : "", dMy = it.d ? (it.d.my || "") : "";
+      if (q("tEn")) q("tEn").value = tEn;
+      if (q("tMy")) q("tMy").value = tMy;
+      if (q("dEn")) q("dEn").value = dEn;
+      if (q("dMy")) q("dMy").value = dMy;
+      if (it.m) {
+        if (q("mEn")) q("mEn").value = it.m.en || "";
+        if (q("mMy")) q("mMy").value = it.m.my || "";
+      }
+    });
+  });
+}
+
+function collectEditor() {
+  var str = { en: {}, my: {} };
+  document.querySelectorAll("#editorForm [data-k]").forEach(function (el) {
+    str[el.getAttribute("data-l")][el.getAttribute("data-k")] = el.value;
+  });
+  var doc = { str: str, updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
+  document.querySelectorAll("#editorForm [data-single]").forEach(function (el) {
+    doc[el.getAttribute("data-single")] = el.value.trim();
+  });
+  LIST_SCHEMAS.forEach(function (ls) {
+    var box = document.querySelector('[data-list="' + ls.key + '"] .list-items');
+    var arr = [];
+    box.querySelectorAll(".list-item").forEach(function (row) {
+      var q = function (s) { var e = row.querySelector('[data-f="' + s + '"]'); return e ? e.value : ""; };
+      var it = { t: { en: q("tEn"), my: q("tMy") }, d: { en: q("dEn"), my: q("dMy") } };
+      if (ls.icon) it.icon = q("icon");
+      if (ls.nameObj) {
+        var ne = q("nameEn"), nm2 = q("nameMy");
+        it.name = (ne === nm2) ? ne : { en: ne, my: nm2 };
+      }
+      var mEn = q("mEn"), mMy = q("mMy");
+      if (mEn !== "" || mMy !== "") it.m = { en: mEn, my: mMy };
+      else if ((DEFAULT_LISTS[ls.key][arr.length] || {}).m) it.m = { en: "", my: "" };
+      arr.push(it);
+    });
+    doc[ls.key] = arr;
+  });
+  return doc;
+}
+
+function setMsg(txt, ok) {
+  ["saveMsg", "saveMsg2"].forEach(function (id) {
+    var e = document.getElementById(id);
+    e.textContent = txt;
+    e.style.color = ok ? "#1d7a3f" : "#a33";
+  });
+}
+function doSave() {
+  if (!db) { setMsg("Database not connected.", false); return; }
+  setMsg("Saving…", true);
+  db.collection("nma_mc_site").doc("site").set(collectEditor())
+    .then(function () { setMsg("Saved. The site is updated.", true); })
+    .catch(function (err) { setMsg("Save failed: " + err.message, false); });
+}
+document.getElementById("saveBtn").addEventListener("click", doSave);
+document.getElementById("saveBtn2").addEventListener("click", doSave);
+document.getElementById("reloadBtn").addEventListener("click", function () { loadRemoteIntoEditor(); setMsg("Reloaded.", true); });
+
+function loadRemoteIntoEditor() {
+  if (!db) { fillEditor(null); return; }
+  db.collection("nma_mc_site").doc("site").get()
+    .then(function (s) { fillEditor(s.exists ? s.data() : null); })
+    .catch(function () { fillEditor(null); });
+}
+
+/* ---------- registrations ---------- */
+function escHtml(s) {
+  s = s == null ? "" : String(s);
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+function fmtDate(ts) {
+  try {
+    var d = ts && ts.toDate ? ts.toDate() : new Date(ts);
+    return d.toLocaleString();
+  } catch (e) { return ""; }
+}
+function loadRegs() {
+  var body = document.getElementById("regBody");
+  if (!db) { body.innerHTML = '<tr><td colspan="10" class="empty-note">Database not connected.</td></tr>'; return; }
+  body.innerHTML = '<tr><td colspan="10" class="empty-note">Loading…</td></tr>';
+  db.collection("nma_mc_regs").orderBy("createdAt", "desc").limit(200).get()
+    .then(function (snap) {
+      document.getElementById("regCount").textContent = snap.size ? "(" + snap.size + ")" : "";
+      if (snap.empty) { body.innerHTML = '<tr><td colspan="10" class="empty-note">No registrations yet.</td></tr>'; return; }
+      var h = "";
+      snap.forEach(function (doc) {
+        var r = doc.data();
+        h += "<tr><td>" + escHtml(fmtDate(r.createdAt)) + "</td><td><strong>" + escHtml(r.name) + "</strong></td>"
+          + "<td>" + escHtml(r.program) + "</td><td>" + escHtml(r.year) + "</td><td>" + escHtml(r.interest) + "</td>"
+          + "<td>" + escHtml(r.phone) + "</td><td>" + escHtml(r.email) + "</td>"
+          + "<td>" + (r.sample ? '<a href="' + escHtml(r.sample) + '" target="_blank" rel="noopener">link</a>' : "") + "</td>"
+          + "<td>" + escHtml(r.why) + "</td>"
+          + '<td><button class="del" data-id="' + doc.id + '">Delete</button></td></tr>';
+      });
+      body.innerHTML = h;
+      body.querySelectorAll(".del").forEach(function (b) {
+        b.addEventListener("click", function () {
+          if (!confirm("Delete this registration?")) return;
+          db.collection("nma_mc_regs").doc(b.getAttribute("data-id")).delete().then(loadRegs);
+        });
+      });
+    })
+    .catch(function (err) {
+      body.innerHTML = '<tr><td colspan="10" class="empty-note">Could not load: ' + escHtml(err.message) + '</td></tr>';
+    });
+}
+document.getElementById("refreshRegs").addEventListener("click", loadRegs);
+</script>
+</body>
+</html>

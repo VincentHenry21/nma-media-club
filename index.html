@@ -6,6 +6,8 @@
 <title>NMA College Media Club</title>
 <meta name="description" content="NMA College Media Club: the story of NMA, told by its students. Photo, video and stories from campus life.">
 <link rel="icon" href="assets/logo.jpg">
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
 <style>
   :root {
     --orange: #E95B05;
@@ -20,125 +22,134 @@
   html { scroll-behavior: smooth; }
   body {
     font-family: "Helvetica Neue", Helvetica, Arial, "Noto Sans Myanmar", "Myanmar Text", sans-serif;
-    color: var(--ink);
-    background: var(--white);
-    line-height: 1.7;
+    color: var(--ink); background: var(--white); line-height: 1.7;
     -webkit-font-smoothing: antialiased;
   }
   a { color: inherit; }
   .wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
 
-  /* Nav */
-  nav {
-    position: sticky; top: 0; z-index: 50;
-    background: rgba(255,255,255,.96);
-    border-bottom: 1px solid var(--line);
-  }
+  nav { position: sticky; top: 0; z-index: 60; background: rgba(255,255,255,.97); border-bottom: 1px solid var(--line); }
   .nav-inner { display: flex; align-items: center; gap: 14px; height: 64px; }
   .nav-brand { display: flex; align-items: center; gap: 10px; text-decoration: none; font-weight: 800; font-size: 17px; }
   .nav-brand img { width: 36px; height: 36px; border-radius: 8px; }
-  .nav-links { display: flex; gap: 22px; margin-left: auto; }
-  .nav-links a { text-decoration: none; font-size: 14px; font-weight: 600; color: var(--muted); }
-  .nav-links a:hover { color: var(--orange); }
-  .lang-toggle {
-    border: 1px solid var(--line); background: var(--white); border-radius: 20px;
-    padding: 6px 14px; font-size: 13px; font-weight: 700; cursor: pointer; color: var(--ink);
-  }
+  .nav-right { display: flex; gap: 10px; margin-left: auto; align-items: center; }
+  .admin-link { font-size: 13px; font-weight: 700; color: var(--muted); text-decoration: none; border: 1px solid var(--line); border-radius: 20px; padding: 6px 14px; }
+  .admin-link:hover { color: var(--orange); border-color: var(--orange); }
+  .lang-toggle { border: 1px solid var(--line); background: var(--white); border-radius: 20px; padding: 6px 14px; font-size: 13px; font-weight: 700; cursor: pointer; color: var(--ink); }
   .lang-toggle:hover { border-color: var(--orange); color: var(--orange); }
 
-  /* Hero */
-  .hero { background: var(--cream); padding: 72px 0 64px; text-align: center; }
-  .hero img.logo { width: 120px; height: 120px; border-radius: 24px; box-shadow: 0 8px 24px rgba(233,91,5,.25); }
-  .hero .badge {
-    display: inline-block; margin-top: 22px; font-size: 12px; font-weight: 800;
-    letter-spacing: 3px; color: var(--orange);
-  }
-  .hero h1 { font-size: 44px; line-height: 1.25; margin: 14px 0 12px; letter-spacing: -0.5px; }
-  .hero p.sub { font-size: 18px; color: var(--muted); max-width: 620px; margin: 0 auto 28px; }
-  .cta-row { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
-  .btn {
-    display: inline-block; text-decoration: none; font-weight: 700; font-size: 15px;
-    padding: 13px 28px; border-radius: 10px; cursor: pointer; border: none;
-  }
-  .btn-primary { background: var(--orange); color: #fff; }
-  .btn-primary:hover { background: var(--deep-orange); }
-  .btn-ghost { background: var(--white); color: var(--ink); border: 1px solid var(--line); }
-  .btn-ghost:hover { border-color: var(--orange); color: var(--orange); }
+  .hero { background: var(--cream); padding: 64px 0 52px; text-align: center; }
+  .hero img.logo { width: 112px; height: 112px; border-radius: 24px; box-shadow: 0 8px 24px rgba(233,91,5,.25); }
+  .hero .badge { display: inline-block; margin-top: 20px; font-size: 12px; font-weight: 800; letter-spacing: 3px; color: var(--orange); }
+  .hero h1 { font-size: 42px; line-height: 1.25; margin: 14px 0 12px; letter-spacing: -0.5px; }
+  .hero p.sub { font-size: 17px; color: var(--muted); max-width: 640px; margin: 0 auto; }
 
-  /* Stats */
-  .stats { border-bottom: 1px solid var(--line); }
-  .stats-inner { display: grid; grid-template-columns: repeat(4, 1fr); }
-  .stat { padding: 28px 12px; text-align: center; border-left: 1px solid var(--line); }
-  .stat:first-child { border-left: none; }
-  .stat .num { font-size: 30px; font-weight: 800; color: var(--orange); }
-  .stat .lbl { font-size: 13px; color: var(--muted); margin-top: 4px; }
+  .tabbar { position: sticky; top: 64px; z-index: 55; background: var(--white); border-bottom: 1px solid var(--line); }
+  .tabbar-inner { display: flex; gap: 6px; overflow-x: auto; padding: 10px 24px; max-width: 1080px; margin: 0 auto; }
+  .tab-btn {
+    flex: 0 0 auto; border: 1px solid var(--line); background: var(--white); color: var(--muted);
+    font-size: 14px; font-weight: 700; padding: 9px 18px; border-radius: 24px; cursor: pointer;
+    display: flex; align-items: center; gap: 8px; white-space: nowrap;
+  }
+  .tab-btn svg { width: 16px; height: 16px; }
+  .tab-btn:hover { border-color: var(--orange); color: var(--orange); }
+  .tab-btn.active { background: var(--orange); border-color: var(--orange); color: #fff; }
 
-  /* Sections */
-  section.block { padding: 72px 0; }
-  section.block.alt { background: var(--cream); }
+  .tabpage { display: none; padding: 56px 0 72px; animation: fadein .25s ease; }
+  .tabpage.active { display: block; }
+  @keyframes fadein { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
   .kicker { font-size: 12px; font-weight: 800; letter-spacing: 3px; color: var(--orange); margin-bottom: 10px; }
-  h2.sec-title { font-size: 32px; line-height: 1.3; margin-bottom: 12px; letter-spacing: -0.3px; }
-  p.sec-sub { color: var(--muted); font-size: 16px; max-width: 680px; margin-bottom: 36px; }
+  h2.sec-title { font-size: 30px; line-height: 1.3; margin-bottom: 12px; letter-spacing: -0.3px; }
+  p.sec-sub { color: var(--muted); font-size: 16px; max-width: 700px; margin-bottom: 32px; }
 
   .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
-  .card {
-    background: var(--white); border: 1px solid var(--line); border-radius: 14px;
-    padding: 26px 24px;
-  }
-  section.block.alt .card { background: var(--white); }
-  .card .icon {
-    width: 44px; height: 44px; border-radius: 12px; background: var(--cream);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 22px; margin-bottom: 14px;
-  }
+  .card { background: var(--white); border: 1px solid var(--line); border-radius: 14px; padding: 26px 24px; }
+  .card .icon { width: 46px; height: 46px; border-radius: 12px; background: var(--cream); display: flex; align-items: center; justify-content: center; margin-bottom: 14px; }
+  .card .icon svg { width: 24px; height: 24px; stroke: var(--orange); fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
   .card h3 { font-size: 17px; margin-bottom: 8px; }
   .card p { font-size: 14px; color: var(--muted); }
   .card .meta { display: block; margin-top: 12px; font-size: 13px; font-weight: 700; color: var(--deep-orange); }
 
-  /* Two-col */
-  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 18px; }
   .panel { border: 1px solid var(--line); border-radius: 14px; padding: 28px; background: var(--white); }
   .panel h3 { font-size: 18px; margin-bottom: 10px; color: var(--deep-orange); }
   .panel p { font-size: 15px; color: var(--muted); }
-  .why-list { list-style: none; margin-top: 8px; }
-  .why-list li { padding: 12px 0; border-bottom: 1px solid var(--line); font-size: 15px; }
+  .why-list { list-style: none; margin-top: 6px; }
+  .why-list li { padding: 14px 0; border-bottom: 1px solid var(--line); font-size: 15px; display: flex; gap: 14px; }
   .why-list li:last-child { border-bottom: none; }
+  .why-list .icon { flex: 0 0 auto; width: 40px; height: 40px; border-radius: 10px; background: var(--cream); display: flex; align-items: center; justify-content: center; }
+  .why-list .icon svg { width: 20px; height: 20px; stroke: var(--orange); fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
   .why-list strong { color: var(--ink); }
+  .rhythm { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 14px; }
+  .rhythm div { background: var(--cream); border-radius: 10px; padding: 12px 16px; font-size: 14px; }
+  .rhythm strong { display: block; font-size: 13px; color: var(--deep-orange); }
 
-  /* Team table */
-  .roles { border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: var(--white); }
-  .role-row { display: grid; grid-template-columns: 220px 1fr; border-bottom: 1px solid var(--line); }
-  .role-row:last-child { border-bottom: none; }
-  .role-row .r { padding: 14px 18px; font-weight: 700; font-size: 14px; background: var(--cream); }
-  .role-row .d { padding: 14px 18px; font-size: 14px; color: var(--muted); }
+  /* Org chart */
+  .org { text-align: center; padding: 10px 0 6px; }
+  .org-node {
+    display: inline-block; background: var(--white); border: 1px solid var(--line);
+    border-radius: 14px; padding: 16px 22px; min-width: 190px; position: relative; z-index: 1;
+  }
+  .org-node.lead { border-top: 3px solid var(--orange); }
+  .org-node .r { font-weight: 800; font-size: 15px; }
+  .org-node .d { font-size: 13px; color: var(--muted); margin-top: 4px; max-width: 230px; }
+  .org-node.top { border-top: 3px solid var(--ink); }
+  .org-stem { width: 2px; height: 26px; background: var(--line); margin: 0 auto; }
+  .org-children { display: flex; justify-content: center; gap: 16px; flex-wrap: wrap; position: relative; padding-top: 26px; }
+  .org-children::before {
+    content: ""; position: absolute; top: 0; left: 12%; right: 12%; height: 2px; background: var(--line);
+  }
+  .org-children .org-node::before {
+    content: ""; position: absolute; top: -26px; left: 50%; width: 2px; height: 26px; background: var(--line);
+  }
+  .org-note { margin-top: 26px; }
 
-  /* Member ID */
-  .id-flex { display: flex; gap: 40px; align-items: center; flex-wrap: wrap; }
-  .id-flex img { width: 210px; border-radius: 12px; box-shadow: 0 12px 32px rgba(0,0,0,.18); }
-  .id-flex .txt { flex: 1; min-width: 260px; }
-  .id-flex .txt p { color: var(--muted); font-size: 16px; margin-bottom: 16px; }
+  /* 3D member card */
+  .id-flex { display: flex; gap: 48px; align-items: center; flex-wrap: wrap; margin-top: 8px; }
+  .tilt-wrap { perspective: 1100px; }
+  .tilt { position: relative; transform-style: preserve-3d; transition: transform .12s ease-out; will-change: transform; }
+  .tilt img { width: 230px; border-radius: 14px; box-shadow: 0 24px 48px rgba(0,0,0,.25); display: block; }
+  .tilt .glare {
+    position: absolute; inset: 0; border-radius: 14px; pointer-events: none;
+    background: radial-gradient(circle at 30% 20%, rgba(255,255,255,.35), rgba(255,255,255,0) 55%);
+    opacity: 0; transition: opacity .2s;
+  }
+  .tilt-wrap:hover .glare { opacity: 1; }
+  .id-txt { flex: 1; min-width: 280px; }
+  .id-txt p { color: var(--muted); font-size: 16px; margin-bottom: 16px; }
   .id-fields { list-style: none; }
-  .id-fields li { font-size: 15px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+  .id-fields li { font-size: 15px; padding: 9px 0; border-bottom: 1px solid var(--line); }
   .id-fields li:last-child { border-bottom: none; }
   .id-fields strong { display: inline-block; width: 110px; color: var(--ink); }
 
-  /* Join steps */
-  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-bottom: 36px; }
-  .step { background: var(--white); border: 1px solid var(--line); border-radius: 14px; padding: 26px 24px; }
-  .step .n {
-    width: 36px; height: 36px; border-radius: 50%; background: var(--orange); color: #fff;
-    display: flex; align-items: center; justify-content: center; font-weight: 800; margin-bottom: 14px;
+  /* Join form */
+  .form-card { background: var(--white); border: 1px solid var(--line); border-radius: 16px; padding: 32px; margin-bottom: 24px; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field.full { grid-column: 1 / -1; }
+  .field label { font-size: 13px; font-weight: 700; }
+  .field label .req { color: var(--orange); }
+  .field input, .field select, .field textarea {
+    font: inherit; font-size: 14px; border: 1px solid var(--line); border-radius: 10px;
+    padding: 11px 14px; background: var(--white); color: var(--ink); width: 100%;
   }
-  .step h3 { font-size: 16px; margin-bottom: 8px; }
-  .step p { font-size: 14px; color: var(--muted); }
-  .contact-box {
-    background: var(--ink); color: #fff; border-radius: 16px; padding: 36px;
-    display: flex; align-items: center; gap: 24px; flex-wrap: wrap; justify-content: space-between;
-  }
+  .field input:focus, .field select:focus, .field textarea:focus { outline: 2px solid var(--orange); border-color: var(--orange); }
+  .form-err { display: none; background: #fdecea; color: #a33; border-radius: 10px; padding: 12px 16px; font-size: 14px; margin-bottom: 16px; }
+  .form-ok { display: none; background: #e9f7ef; border: 1px solid #bfe6cf; border-radius: 14px; padding: 28px; text-align: center; }
+  .form-ok h3 { color: #1d7a3f; margin-bottom: 8px; }
+  .form-ok p { color: var(--muted); font-size: 15px; }
+  .contact-box { background: var(--ink); color: #fff; border-radius: 16px; padding: 34px; display: flex; align-items: center; gap: 24px; flex-wrap: wrap; justify-content: space-between; }
   .contact-box h3 { font-size: 20px; margin-bottom: 6px; }
   .contact-box p { color: #b9b2a8; font-size: 14px; }
-  .contact-box .btn-ghost { background: transparent; color: #fff; border-color: #4a4540; }
-  .contact-box .btn-ghost:hover { border-color: var(--orange); color: var(--orange); }
+
+  .btn { display: inline-block; text-decoration: none; font-weight: 700; font-size: 15px; padding: 13px 28px; border-radius: 10px; cursor: pointer; border: none; }
+  .btn-primary { background: var(--orange); color: #fff; }
+  .btn-primary:hover { background: var(--deep-orange); }
+  .btn-primary:disabled { opacity: .6; cursor: wait; }
+  .btn-ghost { background: var(--white); color: var(--ink); border: 1px solid var(--line); }
+  .btn-ghost:hover { border-color: var(--orange); color: var(--orange); }
+  .cta-row { display: flex; gap: 12px; flex-wrap: wrap; }
 
   footer { border-top: 1px solid var(--line); padding: 36px 0; }
   .foot-inner { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
@@ -149,14 +160,13 @@
   @media (max-width: 860px) {
     .cards { grid-template-columns: 1fr; }
     .two-col { grid-template-columns: 1fr; }
-    .steps { grid-template-columns: 1fr; }
-    .stats-inner { grid-template-columns: repeat(2, 1fr); }
-    .stat { border-left: none; border-top: 1px solid var(--line); }
-    .stat:nth-child(-n+2) { border-top: none; }
-    .hero h1 { font-size: 32px; }
-    .nav-links { display: none; }
-    .role-row { grid-template-columns: 1fr; }
-    .role-row .r { background: none; padding-bottom: 0; }
+    .form-grid { grid-template-columns: 1fr; }
+    .hero h1 { font-size: 30px; }
+    .rhythm { grid-template-columns: 1fr; }
+    .org-children::before { display: none; }
+    .org-children .org-node::before { display: none; }
+    .org-children { flex-direction: column; align-items: center; padding-top: 0; gap: 12px; }
+    .org-stem { height: 18px; }
   }
 </style>
 </head>
@@ -164,124 +174,96 @@
 
 <nav>
   <div class="wrap nav-inner">
-    <a class="nav-brand" href="#top"><img src="assets/logo.jpg" alt="Media Club logo"><span>NMA Media Club</span></a>
-    <div class="nav-links">
-      <a href="#about" data-i18n="nav_about">About</a>
-      <a href="#work" data-i18n="nav_work">What we do</a>
-      <a href="#platforms" data-i18n="nav_platforms">Platforms</a>
-      <a href="#team" data-i18n="nav_team">Team</a>
-      <a href="#join" data-i18n="nav_join">Join</a>
+    <a class="nav-brand" href="#" data-tablink="about"><img src="assets/logo.jpg" alt="Media Club logo"><span>NMA Media Club</span></a>
+    <div class="nav-right">
+      <a class="admin-link" href="admin.html" data-i18n="nav_admin">Admin</a>
+      <button class="lang-toggle" id="langToggle">မြန်မာ</button>
     </div>
-    <button class="lang-toggle" id="langToggle" aria-label="Switch language">မြန်မာ</button>
   </div>
 </nav>
 
-<header class="hero" id="top">
+<header class="hero">
   <div class="wrap">
     <img class="logo" src="assets/logo.jpg" alt="NMA College Media Club logo">
     <div><span class="badge">NMA COLLEGE &middot; STUDENT MEDIA CLUB</span></div>
     <h1 data-i18n="hero_title">The story of NMA, told by its students.</h1>
-    <p class="sub" data-i18n="hero_sub">We shoot, edit, and publish photo and video stories from campus life, on Facebook, TikTok, Instagram, and YouTube.</p>
-    <div class="cta-row">
-      <a class="btn btn-primary" href="#join" data-i18n="hero_cta_join">Join the club</a>
-      <a class="btn btn-ghost" href="#work" data-i18n="hero_cta_work">See what we do</a>
-    </div>
+    <p class="sub" data-i18n="hero_sub">We are the NMA College Media Club: a student-run team shooting, editing, and publishing photo and video stories from campus life.</p>
   </div>
 </header>
 
-<div class="stats">
-  <div class="wrap stats-inner">
-    <div class="stat"><div class="num">5,000</div><div class="lbl" data-i18n="stat_followers">followers, year-one goal</div></div>
-    <div class="stat"><div class="num">250+</div><div class="lbl" data-i18n="stat_posts">posts in the first year</div></div>
-    <div class="stat"><div class="num">100%</div><div class="lbl" data-i18n="stat_events">major events covered</div></div>
-    <div class="stat"><div class="num">15-25</div><div class="lbl" data-i18n="stat_members">founding members</div></div>
+<div class="tabbar">
+  <div class="tabbar-inner" id="tabbar">
+    <button class="tab-btn active" data-tab="about"><span data-i18n="tab_about">About</span></button>
+    <button class="tab-btn" data-tab="work"><span data-i18n="tab_work">What we do</span></button>
+    <button class="tab-btn" data-tab="platforms"><span data-i18n="tab_platforms">Platforms</span></button>
+    <button class="tab-btn" data-tab="team"><span data-i18n="tab_team">Team</span></button>
+    <button class="tab-btn" data-tab="memberid"><span data-i18n="tab_memberid">Member ID</span></button>
+    <button class="tab-btn" data-tab="join"><span data-i18n="tab_join">Join</span></button>
   </div>
 </div>
 
-<section class="block" id="about">
-  <div class="wrap">
+<main class="wrap">
+
+  <!-- ABOUT -->
+  <div class="tabpage active" id="page-about">
     <div class="kicker" data-i18n="about_kicker">ABOUT THE CLUB</div>
     <h2 class="sec-title" data-i18n="about_title">A student newsroom for campus life.</h2>
-    <p class="sec-sub" data-i18n="about_sub">The Media Club is NMA College's student-run media team. We document events, tell student and graduate stories, and keep the college's social channels alive with real, student-made content.</p>
+    <p class="sec-sub" data-i18n="about_sub">The Media Club is NMA College's student-run media team, founded in 2026. We document events, tell student and graduate stories, and keep the college's social channels alive with real, student-made content.</p>
     <div class="two-col">
-      <div class="panel">
-        <h3 data-i18n="vision_t">Our vision</h3>
-        <p data-i18n="vision_d">To make NMA College the most visible, best-documented student community among Myanmar's private colleges.</p>
-      </div>
-      <div class="panel">
-        <h3 data-i18n="mission_t">Our mission</h3>
-        <p data-i18n="mission_d">To capture NMA student life in photo, video, and words made by students themselves, and to give members real media skills they can use after graduation.</p>
-      </div>
+      <div class="panel"><h3 data-i18n="vision_t">Our vision</h3><p data-i18n="vision_d">To make NMA College the most visible, best-documented student community among Myanmar's private colleges.</p></div>
+      <div class="panel"><h3 data-i18n="mission_t">Our mission</h3><p data-i18n="mission_d">To capture NMA student life in photo, video, and words made by students themselves, and to give members real media skills they can use after graduation.</p></div>
     </div>
-    <div style="margin-top:18px" class="panel">
+    <div class="panel" style="margin-bottom:18px">
       <h3 data-i18n="why_t">Why a media club</h3>
-      <ul class="why-list">
-        <li><strong data-i18n="why1_t">It helps admissions. </strong><span data-i18n="why1_d">A 30-second TikTok from a real student beats a printed brochure. Student-made content feels honest, and honesty earns trust.</span></li>
-        <li><strong data-i18n="why2_t">It records events properly. </strong><span data-i18n="why2_d">Graduations, career fairs, and guest talks disappear after they happen. We turn each one into photos, recaps, and interviews that keep working for weeks.</span></li>
-        <li><strong data-i18n="why3_t">It builds careers. </strong><span data-i18n="why3_d">Members graduate with a real portfolio: shooting, editing, design, writing, and social media management.</span></li>
-        <li><strong data-i18n="why4_t">It brings students together. </strong><span data-i18n="why4_d">Members from every program and year work on one project with one shared identity.</span></li>
-      </ul>
+      <ul class="why-list" id="whyList"></ul>
+    </div>
+    <div class="panel">
+      <h3 data-i18n="rhythm_t">How a normal week runs</h3>
+      <div class="rhythm" id="rhythmGrid"></div>
     </div>
   </div>
-</section>
 
-<section class="block alt" id="work">
-  <div class="wrap">
+  <!-- WORK -->
+  <div class="tabpage" id="page-work">
     <div class="kicker" data-i18n="work_kicker">WHAT WE DO</div>
-    <h2 class="sec-title" data-i18n="work_title">Five things we publish.</h2>
-    <p class="sec-sub" data-i18n="work_sub">Everything we make falls under five content pillars, published in English and Myanmar.</p>
-    <div class="cards">
-      <div class="card"><div class="icon">&#127909;</div><h3 data-i18n="p1t">Student life</h3><p data-i18n="p1d">Day-in-the-life reels, classroom moments, canteen culture, and student takeovers.</p></div>
-      <div class="card"><div class="icon">&#127942;</div><h3 data-i18n="p2t">Achievements</h3><p data-i18n="p2d">Graduate stories, top students, competition wins, and internship placements.</p></div>
-      <div class="card"><div class="icon">&#127880;</div><h3 data-i18n="p3t">Events</h3><p data-i18n="p3d">Same-day recap videos from graduations, career fairs, orientations, and guest talks.</p></div>
-      <div class="card"><div class="icon">&#128214;</div><h3 data-i18n="p4t">Knowledge</h3><p data-i18n="p4d">60-second explainers pulled from real lessons: marketing tips, accounting basics, interview skills.</p></div>
-      <div class="card"><div class="icon">&#129309;</div><h3 data-i18n="p5t">Community</h3><p data-i18n="p5d">Staff introductions, collabs with other clubs, and festival greetings like Thadingyut and Thingyan.</p></div>
-      <div class="card"><div class="icon">&#127916;</div><h3 data-i18n="p6t">Graduate Stories</h3><p data-i18n="p6d">Our flagship series: 12 episodes in year one, following NMA graduates and where they are now.</p></div>
-    </div>
+    <h2 class="sec-title" data-i18n="work_title">What we publish.</h2>
+    <p class="sec-sub" data-i18n="work_sub">Everything we make falls under content pillars, published in English and Myanmar, with Myanmar subtitles on every video.</p>
+    <div class="cards" id="pillarGrid"></div>
   </div>
-</section>
 
-<section class="block" id="platforms">
-  <div class="wrap">
+  <!-- PLATFORMS -->
+  <div class="tabpage" id="page-platforms">
     <div class="kicker" data-i18n="plat_kicker">WHERE WE PUBLISH</div>
     <h2 class="sec-title" data-i18n="plat_title">Find us where you already are.</h2>
-    <p class="sec-sub" data-i18n="plat_sub">A steady rhythm on five platforms, every week.</p>
-    <div class="cards">
-      <div class="card"><div class="icon">&#128101;</div><h3>Facebook</h3><p data-i18n="fb_d">Photos, event albums, announcements, and longer videos.</p><span class="meta" data-i18n="fb_m">3 to 4 posts a week</span></div>
-      <div class="card"><div class="icon">&#127926;</div><h3>TikTok</h3><p data-i18n="tt_d">Vertical video, 15 to 60 seconds. Built for reach.</p><span class="meta" data-i18n="tt_m">4 to 5 posts a week</span></div>
-      <div class="card"><div class="icon">&#128248;</div><h3>Instagram</h3><p data-i18n="ig_d">Reels, carousels, and daily stories from around campus.</p><span class="meta" data-i18n="ig_m">4 posts a week, stories daily</span></div>
-      <div class="card"><div class="icon">&#9654;</div><h3>YouTube</h3><p data-i18n="yt_d">Event films, graduate stories, and explainers. The permanent library.</p><span class="meta" data-i18n="yt_m">2 videos a month</span></div>
-      <div class="card"><div class="icon">&#9992;</div><h3>Telegram</h3><p data-i18n="tg_d">Announcements and behind-the-scenes for members and followers.</p><span class="meta" data-i18n="tg_m">As needed</span></div>
-      <div class="card"><div class="icon">&#127760;</div><h3 data-i18n="bi_t">Two languages</h3><p data-i18n="bi_d">Key posts go out in English and Myanmar, with Myanmar subtitles on every video.</p><span class="meta" data-i18n="bi_m">Always</span></div>
-    </div>
+    <p class="sec-sub" data-i18n="plat_sub">A steady publishing rhythm, every week. Links go live as each channel launches.</p>
+    <div class="cards" id="platformGrid"></div>
   </div>
-</section>
 
-<section class="block alt" id="team">
-  <div class="wrap">
+  <!-- TEAM -->
+  <div class="tabpage" id="page-team">
     <div class="kicker" data-i18n="team_kicker">HOW WE RUN</div>
     <h2 class="sec-title" data-i18n="team_title">Student-led, advisor-guided.</h2>
-    <p class="sec-sub" data-i18n="team_sub">A faculty advisor sets policy and approves sensitive posts. Students run everything else.</p>
-    <div class="roles">
-      <div class="role-row"><div class="r" data-i18n="r1t">President</div><div class="d" data-i18n="r1d">Sets direction, liaises with the School Admission Team, final sign-off.</div></div>
-      <div class="role-row"><div class="r" data-i18n="r2t">Vice President</div><div class="d" data-i18n="r2d">Day-to-day operations, scheduling, stands in for the president.</div></div>
-      <div class="role-row"><div class="r" data-i18n="r3t">Content Lead</div><div class="d" data-i18n="r3d">Runs the editorial calendar, assigns stories, checks quality.</div></div>
-      <div class="role-row"><div class="r" data-i18n="r4t">Video Lead</div><div class="d" data-i18n="r4d">Plans shoots, sets editing standards, looks after gear.</div></div>
-      <div class="role-row"><div class="r" data-i18n="r5t">Design Lead</div><div class="d" data-i18n="r5d">Graphics, thumbnails, templates, brand compliance.</div></div>
-      <div class="role-row"><div class="r" data-i18n="r6t">Social Media Manager</div><div class="d" data-i18n="r6d">Publishes, writes captions, replies to comments, tracks stats.</div></div>
-      <div class="role-row"><div class="r" data-i18n="r7t">Secretary / Treasurer</div><div class="d" data-i18n="r7d">Member records, budget, meeting notes.</div></div>
+    <p class="sec-sub" data-i18n="team_sub">A faculty advisor sets content policy and approves sensitive posts. Students run everything else. The executive team is elected every academic year.</p>
+    <div class="org">
+      <div class="org-node top" id="orgPresident"></div>
+      <div class="org-stem"></div>
+      <div class="org-node" id="orgVp"></div>
+      <div class="org-children" id="orgLeads"></div>
+    </div>
+    <div class="panel org-note">
+      <h3 data-i18n="team_note_t">Members</h3>
+      <p data-i18n="team_note_d">Any NMA student can join, any program, any year. New members complete a two-week onboarding in phone shooting, CapCut editing, and the club brand guide, then pick a team: video, design, or writing and social. Target size for year one: 15 to 25 active members.</p>
     </div>
   </div>
-</section>
 
-<section class="block" id="memberid">
-  <div class="wrap">
+  <!-- MEMBER ID -->
+  <div class="tabpage" id="page-memberid">
     <div class="kicker" data-i18n="id_kicker">MEMBER ID</div>
     <h2 class="sec-title" data-i18n="id_title">Every member gets a card.</h2>
-    <div class="id-flex" style="margin-top:28px">
-      <img src="assets/member-id.jpg" alt="Media Club member ID card">
-      <div class="txt">
-        <p data-i18n="id_d">The official Media Club ID: club logo on the signature orange, a photo placeholder, and the member's details, finished with a film-strip footer. Printed each semester for all active members.</p>
+    <p class="sec-sub" data-i18n="id_d">The official Media Club ID: club logo on the signature orange, a photo placeholder, and the member's details, finished with a film-strip footer. Printed each semester for all active members. Move your cursor over the card to see it in 3D.</p>
+    <div class="id-flex">
+      <div class="tilt-wrap"><div class="tilt" id="idTilt"><img src="assets/member-id.jpg" alt="Media Club member ID card"><div class="glare"></div></div></div>
+      <div class="id-txt">
         <ul class="id-fields">
           <li><strong>Name</strong><span data-i18n="id_f1">Member's full name</span></li>
           <li><strong>Position</strong><span data-i18n="id_f2">Role in the club</span></li>
@@ -291,172 +273,250 @@
       </div>
     </div>
   </div>
-</section>
 
-<section class="block alt" id="join">
-  <div class="wrap">
+  <!-- JOIN -->
+  <div class="tabpage" id="page-join">
     <div class="kicker" data-i18n="join_kicker">JOIN US</div>
     <h2 class="sec-title" data-i18n="join_title">No experience needed. We teach everything.</h2>
-    <p class="sec-sub" data-i18n="join_sub">Any NMA student can join, any program, any year. Selection is based on enthusiasm and creativity, not on who already owns gear.</p>
-    <div class="steps">
-      <div class="step"><div class="n">1</div><h3 data-i18n="s1t">Apply</h3><p data-i18n="s1d">Send your name, program, year, interests, and one sample: a 30-second video or a design post.</p></div>
-      <div class="step"><div class="n">2</div><h3 data-i18n="s2t">Learn the basics</h3><p data-i18n="s2d">A two-week onboarding: phone shooting, CapCut editing, and the club brand guide.</p></div>
-      <div class="step"><div class="n">3</div><h3 data-i18n="s3t">Pick your team</h3><p data-i18n="s3d">Join the video, design, or writing and social team, and start publishing.</p></div>
+    <p class="sec-sub" data-i18n="join_sub">Selection is based on enthusiasm and creativity, not on who already owns gear. Here is how joining works, and the form to start.</p>
+    <div class="cards" id="stepGrid" style="margin-bottom:24px"></div>
+    <div class="form-card" id="regCard">
+      <h3 style="margin-bottom:6px" data-i18n="form_t">Club registration</h3>
+      <p style="color:var(--muted);font-size:14px;margin-bottom:20px" data-i18n="form_d">Fill this in and the club team will get back to you.</p>
+      <div class="form-err" id="formErr"></div>
+      <form id="regForm" novalidate>
+        <div class="form-grid">
+          <div class="field"><label><span data-i18n="f_name">Full name</span> <span class="req">*</span></label><input id="fName" maxlength="80" autocomplete="name"></div>
+          <div class="field"><label><span data-i18n="f_program">Program</span> <span class="req">*</span></label><input id="fProgram" maxlength="80" placeholder="e.g. BBA"></div>
+          <div class="field"><label><span data-i18n="f_year">Year</span> <span class="req">*</span></label>
+            <select id="fYear"><option value="">--</option><option>Year 1</option><option>Year 2</option><option>Year 3</option><option>Year 4</option></select></div>
+          <div class="field"><label><span data-i18n="f_interest">Interested team</span> <span class="req">*</span></label>
+            <select id="fInterest"><option value="">--</option><option data-i18n="opt_video">Video</option><option data-i18n="opt_design">Design</option><option data-i18n="opt_writing">Writing and social</option></select></div>
+          <div class="field"><label data-i18n="f_phone">Phone (optional)</label><input id="fPhone" maxlength="30" autocomplete="tel"></div>
+          <div class="field"><label data-i18n="f_email">Email (optional)</label><input id="fEmail" maxlength="80" type="email" autocomplete="email"></div>
+          <div class="field full"><label data-i18n="f_sample">Sample of your work (link, optional)</label><input id="fSample" maxlength="200" placeholder="https://"></div>
+          <div class="field full"><label data-i18n="f_why">Why do you want to join? (optional)</label><textarea id="fWhy" rows="3" maxlength="500"></textarea></div>
+        </div>
+        <div style="margin-top:20px"><button type="submit" class="btn btn-primary" id="regSubmit" data-i18n="f_submit">Submit registration</button></div>
+      </form>
+      <div class="form-ok" id="formOk" style="margin-top:8px">
+        <h3 data-i18n="ok_t">Registration received.</h3>
+        <p data-i18n="ok_d">Thanks for signing up. The club team will contact you about the next onboarding.</p>
+      </div>
     </div>
     <div class="contact-box">
-      <div>
-        <h3 data-i18n="contact_t">Ready to join, or want to know more?</h3>
-        <p data-i18n="contact_d">Reach out any time. We reply fast.</p>
-      </div>
-      <div class="cta-row" style="justify-content:flex-start">
+      <div><h3 data-i18n="contact_t">Questions first?</h3><p data-i18n="contact_d">Reach out any time. We reply fast.</p></div>
+      <div class="cta-row">
         <a class="btn btn-primary" href="mailto:thitsarnextdoor@gmail.com" data-i18n="contact_email">Email us</a>
-        <a class="btn btn-ghost" href="tel:+959457322394">09457322394</a>
+        <a class="btn btn-ghost" href="tel:+959457322394" style="background:transparent;color:#fff;border-color:#4a4540">09457322394</a>
       </div>
     </div>
   </div>
-</section>
+
+</main>
 
 <footer>
   <div class="wrap foot-inner">
     <img src="assets/logo.jpg" alt="Media Club logo">
     <img src="assets/school-logo.jpg" alt="NMA College logo" style="width:64px">
-    <div>
-      <div class="fbrand">NMA College Media Club</div>
-      <div style="font-size:13px;color:var(--muted)" data-i18n="foot_tag">The story of NMA, told by its students.</div>
-    </div>
-    <div class="fmeta">thitsarnextdoor@gmail.com<br>09457322394<br>&copy; 2026 NMA College Media Club</div>
+    <div><div class="fbrand">NMA College Media Club</div>
+    <div style="font-size:13px;color:var(--muted)" data-i18n="foot_tag">The story of NMA, told by its students.</div></div>
+    <div class="fmeta"><span id="footEmail">thitsarnextdoor@gmail.com</span><br><span id="footPhone">09457322394</span><br>&copy; 2026 NMA College Media Club</div>
   </div>
 </footer>
 
+<script src="js/defaults.js"></script>
 <script>
-var I18N = {
-en: {
-  nav_about: "About", nav_work: "What we do", nav_platforms: "Platforms", nav_team: "Team", nav_join: "Join",
-  hero_title: "The story of NMA, told by its students.",
-  hero_sub: "We shoot, edit, and publish photo and video stories from campus life, on Facebook, TikTok, Instagram, and YouTube.",
-  hero_cta_join: "Join the club", hero_cta_work: "See what we do",
-  stat_followers: "followers, year-one goal", stat_posts: "posts in the first year", stat_events: "major events covered", stat_members: "founding members",
-  about_kicker: "ABOUT THE CLUB", about_title: "A student newsroom for campus life.",
-  about_sub: "The Media Club is NMA College's student-run media team. We document events, tell student and graduate stories, and keep the college's social channels alive with real, student-made content.",
-  vision_t: "Our vision", vision_d: "To make NMA College the most visible, best-documented student community among Myanmar's private colleges.",
-  mission_t: "Our mission", mission_d: "To capture NMA student life in photo, video, and words made by students themselves, and to give members real media skills they can use after graduation.",
-  why_t: "Why a media club",
-  why1_t: "It helps admissions. ", why1_d: "A 30-second TikTok from a real student beats a printed brochure. Student-made content feels honest, and honesty earns trust.",
-  why2_t: "It records events properly. ", why2_d: "Graduations, career fairs, and guest talks disappear after they happen. We turn each one into photos, recaps, and interviews that keep working for weeks.",
-  why3_t: "It builds careers. ", why3_d: "Members graduate with a real portfolio: shooting, editing, design, writing, and social media management.",
-  why4_t: "It brings students together. ", why4_d: "Members from every program and year work on one project with one shared identity.",
-  work_kicker: "WHAT WE DO", work_title: "Five things we publish.",
-  work_sub: "Everything we make falls under five content pillars, published in English and Myanmar.",
-  p1t: "Student life", p1d: "Day-in-the-life reels, classroom moments, canteen culture, and student takeovers.",
-  p2t: "Achievements", p2d: "Graduate stories, top students, competition wins, and internship placements.",
-  p3t: "Events", p3d: "Same-day recap videos from graduations, career fairs, orientations, and guest talks.",
-  p4t: "Knowledge", p4d: "60-second explainers pulled from real lessons: marketing tips, accounting basics, interview skills.",
-  p5t: "Community", p5d: "Staff introductions, collabs with other clubs, and festival greetings like Thadingyut and Thingyan.",
-  p6t: "Graduate Stories", p6d: "Our flagship series: 12 episodes in year one, following NMA graduates and where they are now.",
-  plat_kicker: "WHERE WE PUBLISH", plat_title: "Find us where you already are.",
-  plat_sub: "A steady rhythm on five platforms, every week.",
-  fb_d: "Photos, event albums, announcements, and longer videos.", fb_m: "3 to 4 posts a week",
-  tt_d: "Vertical video, 15 to 60 seconds. Built for reach.", tt_m: "4 to 5 posts a week",
-  ig_d: "Reels, carousels, and daily stories from around campus.", ig_m: "4 posts a week, stories daily",
-  yt_d: "Event films, graduate stories, and explainers. The permanent library.", yt_m: "2 videos a month",
-  tg_d: "Announcements and behind-the-scenes for members and followers.", tg_m: "As needed",
-  bi_t: "Two languages", bi_d: "Key posts go out in English and Myanmar, with Myanmar subtitles on every video.", bi_m: "Always",
-  team_kicker: "HOW WE RUN", team_title: "Student-led, advisor-guided.",
-  team_sub: "A faculty advisor sets policy and approves sensitive posts. Students run everything else.",
-  r1t: "President", r1d: "Sets direction, liaises with the School Admission Team, final sign-off.",
-  r2t: "Vice President", r2d: "Day-to-day operations, scheduling, stands in for the president.",
-  r3t: "Content Lead", r3d: "Runs the editorial calendar, assigns stories, checks quality.",
-  r4t: "Video Lead", r4d: "Plans shoots, sets editing standards, looks after gear.",
-  r5t: "Design Lead", r5d: "Graphics, thumbnails, templates, brand compliance.",
-  r6t: "Social Media Manager", r6d: "Publishes, writes captions, replies to comments, tracks stats.",
-  r7t: "Secretary / Treasurer", r7d: "Member records, budget, meeting notes.",
-  id_kicker: "MEMBER ID", id_title: "Every member gets a card.",
-  id_d: "The official Media Club ID: club logo on the signature orange, a photo placeholder, and the member's details, finished with a film-strip footer. Printed each semester for all active members.",
-  id_f1: "Member's full name", id_f2: "Role in the club", id_f3: "Study program", id_f4: "Academic year",
-  join_kicker: "JOIN US", join_title: "No experience needed. We teach everything.",
-  join_sub: "Any NMA student can join, any program, any year. Selection is based on enthusiasm and creativity, not on who already owns gear.",
-  s1t: "Apply", s1d: "Send your name, program, year, interests, and one sample: a 30-second video or a design post.",
-  s2t: "Learn the basics", s2d: "A two-week onboarding: phone shooting, CapCut editing, and the club brand guide.",
-  s3t: "Pick your team", s3d: "Join the video, design, or writing and social team, and start publishing.",
-  contact_t: "Ready to join, or want to know more?", contact_d: "Reach out any time. We reply fast.",
-  contact_email: "Email us",
-  foot_tag: "The story of NMA, told by its students."
-},
-my: {
-  nav_about: "အကြောင်း", nav_work: "လုပ်ငန်းများ", nav_platforms: "ပလက်ဖောင်းများ", nav_team: "အဖွဲ့", nav_join: "ပါဝင်ရန်",
-  hero_title: "NMA ၏ဇာတ်လမ်းကို ကျောင်းသားများကိုယ်တိုင်ပြောပြမည်။",
-  hero_sub: "ကျောင်းသားဘဝမှ ဓာတ်ပုံနှင့် ဗီဒီယိုဇာတ်လမ်းများကို ရိုက်ကူး၊ တည်းဖြတ်၊ ထုတ်ဝေပါသည်။ Facebook, TikTok, Instagram နှင့် YouTube တို့တွင် ဖော်ပြပါသည်။",
-  hero_cta_join: "ကလပ်သို့ဝင်ရန်", hero_cta_work: "လုပ်ငန်းများကြည့်ရန်",
-  stat_followers: "ပထမနှစ်ပစ်မှတ် Follower", stat_posts: "ပထမနှစ်ပို့စ်များ", stat_events: "အဓိကပွဲများ လွှမ်းခြုံမှု", stat_members: "စတင်တည်ထောင်သူများ",
-  about_kicker: "ကလပ်အကြောင်း", about_title: "ကျောင်းသားဘဝအတွက် ကျောင်းသားသတင်းအဖွဲ့။",
-  about_sub: "မီဒီယာကလပ်သည် NMA College ၏ ကျောင်းသားဦးဆောင်မီဒီယာအဖွဲ့ဖြစ်သည်။ ပွဲများကို မှတ်တမ်းတင်သည်၊ ကျောင်းသားနှင့် ဘွဲ့ရများ၏ဇာတ်လမ်းများကို ပြောပြသည်၊ ကောလိပ်၏ဆိုရှယ်စာမျက်နှာများကို ကျောင်းသားလက်ရာအစစ်များဖြင့် ရှင်သန်စေသည်။",
-  vision_t: "မျှော်မှန်းချက်", vision_d: "NMA College ကို မြန်မာနိုင်ငံ၏ပုဂ္ဂလိကကောလိပ်များအနက် အထင်ရှားဆုံး၊ အကောင်းဆုံးမှတ်တမ်းတင်ထားသော ကျောင်းသားအသိုင်းအဝိုင်းဖြစ်စေရန်။",
-  mission_t: "ရည်မှန်းချက်", mission_d: "NMA ကျောင်းသားဘဝကို ကျောင်းသားများကိုယ်တိုင်ထုတ်လုပ်သော ဓာတ်ပုံ၊ ဗီဒီယိုနှင့် စာသားများဖြင့် မှတ်တမ်းတင်ဖော်ပြရန်၊ အဖွဲ့ဝင်များအား ဘွဲ့ရပြီးနောက် အသုံးချနိုင်မည့် လက်တွေ့မီဒီယာကျွမ်းကျင်မှုများ ပေးအပ်ရန်။",
-  why_t: "မီဒီယာကလပ် အဘယ်ကြောင့်လိုအပ်သနည်း",
-  why1_t: "ကျောင်းသားစုဆောင်းရေးကို အထောက်အကူပြုသည်။ ", why1_d: "ကျောင်းသားအစစ်တစ်ဦး၏ စက္ကန့် ၃၀ TikTok သည် ပုံနှိပ်လက်ကမ်းစာစောင်ထက် ပိုမိုဆွဲဆောင်သည်။ ကျောင်းသားလက်ရာသည် ရိုးသားမှုရှိပြီး ရိုးသားမှုက ယုံကြည်မှုရရှိစေသည်။",
-  why2_t: "ပွဲများကို စနစ်တကျမှတ်တမ်းတင်နိုင်သည်။ ", why2_d: "ဘွဲ့နှင်းသဘင်များ၊ အလုပ်အကိုင်ပြပွဲများနှင့် ဧည့်သည်ဟောပြောပွဲများသည် ပြီးဆုံးပြီးနောက် ပျောက်ကွယ်သွားသည်။ ပွဲတိုင်းကို ရက်သတ္တပတ်များစွာ အသုံးဝင်မည့် ဓာတ်ပုံများ၊ အကျဉ်းဗီဒီယိုများနှင့် အင်တာဗျူးများအဖြစ် ပြောင်းလဲသည်။",
-  why3_t: "အလုပ်အကိုင်ရနိုင်စွမ်းကို မြှင့်တင်ပေးသည်။ ", why3_d: "အဖွဲ့ဝင်များသည် လက်တွေ့လုပ်ငန်းစုစည်းမှုဖြင့် ကျောင်းပြီးမည်: ရိုက်ကူးခြင်း၊ တည်းဖြတ်ခြင်း၊ ဒီဇိုင်း၊ စာရေးသားခြင်းနှင့် ဆိုရှယ်မီဒီယာစီမံခန့်ခွဲခြင်း။",
-  why4_t: "ကျောင်းသားများကို စည်းလုံးစေသည်။ ", why4_d: "ပရိုဂရမ်တိုင်းနှင့် အတန်းတိုင်းမှ ကျောင်းသားများသည် တစ်ခုတည်းသောစီမံကိန်းနှင့် တစ်ခုတည်းသောအထောက်အထားဖြင့် လုပ်ဆောင်ကြသည်။",
-  work_kicker: "လုပ်ငန်းများ", work_title: "ထုတ်ဝေမည့်အကြောင်းအရာ ငါးမျိုး။",
-  work_sub: "ထုတ်လုပ်သမျှတိုင်းသည် အကြောင်းအရာအဓိကတိုင် ငါးခုအောက်တွင် ရှိပြီး အင်္ဂလိပ်နှင့် မြန်မာနှစ်ဘာသာဖြင့် ထုတ်ဝေသည်။",
-  p1t: "ကျောင်းသားဘဝ", p1d: "တစ်နေ့တာဘဝရီးလ်များ၊ စာသင်ခန်းအခိုက်အတန့်များ၊ ကန်တင်းယဉ်ကျေးမှု၊ ကျောင်းသားအလှည့်ကျတင်ဆက်မှုများ။",
-  p2t: "အောင်မြင်မှုများ", p2d: "ဘွဲ့ရများ၏ဇာတ်လမ်းများ၊ ထူးချွန်ကျောင်းသားများ၊ ပြိုင်ပွဲအောင်မြင်မှုများ၊ အလုပ်သင်နေရာရရှိမှုများ။",
-  p3t: "ပွဲများ", p3d: "ဘွဲ့နှင်းသဘင်များ၊ အလုပ်အကိုင်ပြပွဲများ၊ ကျောင်းစတက်ပွဲများ၊ ဧည့်သည်ဟောပြောပွဲများမှ တစ်နေ့တည်းအကျဉ်းဗီဒီယိုများ။",
-  p4t: "အသိပညာ", p4d: "သင်ခန်းစာများမှ ထုတ်နုတ်သော စက္ကန့် ၆၀ ရှင်းလင်းချက်များ: မားကတ်တင်းအကြံပြုချက်များ၊ စာရင်းကိုင်အခြေခံများ၊ အင်တာဗျူးကျွမ်းကျင်မှုများ။",
-  p5t: "အသိုင်းအဝိုင်း", p5d: "ဝန်ထမ်းမိတ်ဆက်များ၊ အခြားကလပ်များနှင့် ပူးပေါင်းမှုများ၊ သီတင်းကျွတ်၊ သင်္ကြန်စသော ပွဲတော်နှုတ်ခွန်းဆက်မှုများ။",
-  p6t: "Graduate Stories", p6d: "အဓိကစီးရီး: ပထမနှစ်တွင် အပိုင်း ၁၂ ပိုင်း၊ NMA ဘွဲ့ရများနှင့် ၎င်းတို့ယခုရောက်ရှိနေသောနေရာများ။",
-  plat_kicker: "ထုတ်ဝေမည့်နေရာများ", plat_title: "သင်ရောက်ရှိနေသောနေရာတွင် တွေ့ဆုံမည်။",
-  plat_sub: "ပလက်ဖောင်း ငါးခုပေါ်တွင် အပတ်တိုင်း ပုံမှန်ထုတ်ဝေမှုစည်းချက်။",
-  fb_d: "ဓာတ်ပုံများ၊ ပွဲအယ်လ်ဘမ်များ၊ ကြေညာချက်များနှင့် ဗီဒီယိုရှည်များ။", fb_m: "တစ်ပတ် ၃ ကြိမ်မှ ၄ ကြိမ်",
-  tt_d: "ဒေါင်လိုက်ဗီဒီယို၊ ၁၅ စက္ကန့်မှ စက္ကန့် ၆၀။ ပြန့်နှံ့မှုအတွက် တည်ဆောက်ထားသည်။", tt_m: "တစ်ပတ် ၄ ကြိမ်မှ ၅ ကြိမ်",
-  ig_d: "Reels၊ carousel ပို့စ်များနှင့် ကျောင်းပတ်ဝန်းကျင်မှ နေ့စဉ် Stories များ။", ig_m: "တစ်ပတ် ၄ ပို့စ်၊ Stories နေ့တိုင်း",
-  yt_d: "ပွဲမှတ်တမ်းရုပ်ရှင်များ၊ ဘွဲ့ရဇာတ်လမ်းများနှင့် ရှင်းလင်းချက်များ။ အမြဲတမ်းစာကြည့်တိုက်။", yt_m: "တစ်လ ၂ ခု",
-  tg_d: "အဖွဲ့ဝင်များနှင့် နောက်လိုက်များအတွက် ကြေညာချက်များနှင့် နောက်ကွယ်အခိုက်အတန့်များ။", tg_m: "လိုအပ်သလို",
-  bi_t: "နှစ်ဘာသာ", bi_d: "အရေးကြီးပို့စ်များကို အင်္ဂလိပ်နှင့် မြန်မာနှစ်ဘာသာဖြင့် ထုတ်ဝေပြီး ဗီဒီယိုတိုင်းတွင် မြန်မာစာတန်းများ ပါဝင်သည်။", bi_m: "အမြဲတမ်း",
-  team_kicker: "လည်ပတ်ပုံ", team_title: "ကျောင်းသားဦးဆောင်၊ ဆရာလမ်းညွှန်။",
-  team_sub: "ဆရာဝန်ကြီးက အကြောင်းအရာမူဝါဒချမှတ်ပြီး ထိခိုက်လွယ်သောပို့စ်များကို အတည်ပြုသည်။ ကျန်အားလုံးကို ကျောင်းသားများက ဦးဆောင်သည်။",
-  r1t: "ဥက္ကဌ", r1d: "ဦးတည်ချက်ချမှတ်သည်၊ School Admission Team နှင့် ဆက်ဆံသည်၊ နောက်ဆုံးအတည်ပြုသည်။",
-  r2t: "ဒုတိယဥက္ကဌ", r2d: "နေ့စဉ်လုပ်ငန်းများ၊ အစီအစဉ်ဆွဲသည်၊ ဥက္ကဌကိုယ်စား ဆောင်ရွက်သည်။",
-  r3t: "အကြောင်းအရာ ဦးဆောင်သူ", r3d: "အယ်ဒီတာရီရယ်ပြက္ခဒိန်ကို စီမံသည်၊ ဇာတ်လမ်းများခွဲဝေသည်၊ အရည်အသွေးစစ်ဆေးသည်။",
-  r4t: "ဗီဒီယို ဦးဆောင်သူ", r4d: "ရိုက်ကူးမှုများ စီစဉ်သည်၊ တည်းဖြတ်စံနှုန်းများချမှတ်သည်၊ ပစ္စည်းကိရိယာများ ထိန်းသိမ်းသည်။",
-  r5t: "ဒီဇိုင်း ဦးဆောင်သူ", r5d: "ဂရပ်ဖစ်များ၊ သမ်းနေများ၊ တင်းပလိတ်များ၊ အမှတ်တံဆိပ်လိုက်နာမှု။",
-  r6t: "ဆိုရှယ်မီဒီယာ မန်နေဂျာ", r6d: "ထုတ်ဝေသည်၊ စာတန်းများရေးသည်၊ မှတ်ချက်များကို ပြန်ကြားသည်၊ စာရင်းအင်းများ ကြည့်ရှုသည်။",
-  r7t: "အတွင်းရေးမှူး / ဘဏ္ဍာထိန်း", r7d: "အဖွဲ့ဝင်မှတ်တမ်းများ၊ ဘတ်ဂျက်၊ အစည်းအဝေးမှတ်တမ်းများ။",
-  id_kicker: "အဖွဲ့ဝင်ကတ်", id_title: "အဖွဲ့ဝင်တိုင်းကတ်တစ်ခု ရရှိမည်။",
-  id_d: "တရားဝင်မီဒီယာကလပ်ကတ်: ကလပ်၏လိမ္မော်ရောင်ပေါ်တွင် ကလပ်လိုဂို၊ ဓာတ်ပုံအကွက်၊ အဖွဲ့ဝင်၏အချက်အလက်များ၊ အောက်ခြေတွင် ဖလင်အစင်းပုံ။ တက်ကြွသောအဖွဲ့ဝင်တိုင်းအတွက် နှစ်ဝက်တိုင်း ထုတ်ပေးသည်။",
-  id_f1: "အဖွဲ့ဝင်၏အမည်အပြည့်အစုံ", id_f2: "ကလပ်အတွင်းရာထူး", id_f3: "သင်ကြားနေသောပရိုဂရမ်", id_f4: "ပညာသင်နှစ်",
-  join_kicker: "ပါဝင်ရန်", join_title: "အတွေ့အကြုံ မလိုအပ်ပါ။ အားလုံးသင်ပေးမည်။",
-  join_sub: "NMA ကျောင်းသားတိုင်း ပါဝင်နိုင်သည်၊ ပရိုဂရမ်မရွေး၊ အတန်းမရွေး။ ရွေးချယ်မှုသည် စေတနာနှင့် ဖန်တီးနိုင်စွမ်းအပေါ် အခြေခံသည်။",
-  s1t: "လျှောက်ထားရန်", s1d: "အမည်၊ ပရိုဂရမ်၊ အတန်း၊ စိတ်ဝင်စားမှုများနှင့် နမူနာတစ်ခုခု ပေးပို့ပါ: စက္ကန့် ၃၀ ဗီဒီယို သို့မဟုတ် ဒီဇိုင်းပို့စ်တစ်ခု။",
-  s2t: "အခြေခံသင်ယူရန်", s2d: "နှစ်ပတ်ကြာ အစပျိုးသင်တန်း: ဖုန်းဖြင့်ရိုက်ကူးခြင်း၊ CapCut တည်းဖြတ်ခြင်း၊ ကလပ်အမှတ်တံဆိပ်လမ်းညွှန်။",
-  s3t: "အဖွဲ့ရွေးချယ်ရန်", s3d: "ဗီဒီယို၊ ဒီဇိုင်း သို့မဟုတ် စာရေးသားခြင်းနှင့် ဆိုရှယ်အဖွဲ့ကို ရွေးချယ်ပြီး စတင်ထုတ်ဝေပါ။",
-  contact_t: "ပါဝင်လိုပါသလား၊ ဒါမှမဟုတ် ပိုမိုသိလိုပါသလား။", contact_d: "အချိန်မရွေး ဆက်သွယ်ပါ။ အမြန်ပြန်ကြားပါမည်။",
-  contact_email: "အီးမေးလ်ပို့ရန်",
-  foot_tag: "NMA ၏ဇာတ်လမ်းကို ကျောင်းသားများကိုယ်တိုင်ပြောပြမည်။"
-}
+/* ================= FIREBASE ================= */
+var FB_CONFIG = {
+  apiKey: "AIzaSyC5UfJnl5ygcUSeQihGdQfXOBscocYs8_w",
+  authDomain: "summit-academy-b8968.firebaseapp.com",
+  projectId: "summit-academy-b8968",
+  storageBucket: "summit-academy-b8968.firebasestorage.app",
+  messagingSenderId: "532362317311",
+  appId: "1:532362317311:web:2d391346ec89a5215cebca"
 };
-
-var lang = "en";
-var toggle = document.getElementById("langToggle");
-function applyLang(l) {
-  lang = l;
-  var dict = I18N[l];
-  var els = document.querySelectorAll("[data-i18n]");
-  for (var i = 0; i < els.length; i++) {
-    var k = els[i].getAttribute("data-i18n");
-    if (dict[k] !== undefined) { els[i].textContent = dict[k]; }
-  }
-  document.documentElement.lang = (l === "my" ? "my" : "en");
-  toggle.textContent = (l === "my" ? "English" : "မြန်မာ");
-  try { localStorage.setItem("nma_mc_lang", l); } catch (e) {}
-}
-toggle.addEventListener("click", function () {
-  applyLang(lang === "en" ? "my" : "en");
-});
+var db = null;
 try {
-  var saved = localStorage.getItem("nma_mc_lang");
-  if (saved === "my") { applyLang("my"); }
+  if (typeof firebase !== "undefined") {
+    firebase.initializeApp(FB_CONFIG);
+    db = firebase.firestore();
+  }
+} catch (e) { db = null; }
+
+/* ================= STATE ================= */
+var lang = "en";
+var STR = JSON.parse(JSON.stringify(DEFAULT_STR));
+var LISTS = JSON.parse(JSON.stringify(DEFAULT_LISTS));
+var CONTACT = JSON.parse(JSON.stringify(CONTACT_DEFAULTS));
+try {
+  var savedLang = localStorage.getItem("nma_mc_lang");
+  if (savedLang === "my") lang = "my";
 } catch (e) {}
+
+function t(obj) { return (obj && (obj[lang] || obj.en)) || ""; }
+
+/* ================= TABS ================= */
+var tabIds = ["about","work","platforms","team","memberid","join"];
+function showTab(id, push) {
+  if (tabIds.indexOf(id) < 0) id = "about";
+  var btns = document.querySelectorAll(".tab-btn");
+  for (var i = 0; i < btns.length; i++) btns[i].classList.toggle("active", btns[i].getAttribute("data-tab") === id);
+  var pages = document.querySelectorAll(".tabpage");
+  for (var j = 0; j < pages.length; j++) pages[j].classList.toggle("active", pages[j].id === "page-" + id);
+  if (push !== false) { try { history.replaceState(null, "", "#" + id); } catch (e) {} }
+  var bar = document.querySelector(".tabbar");
+  if (bar) window.scrollTo({ top: bar.offsetTop - 70, behavior: "smooth" });
+}
+document.getElementById("tabbar").addEventListener("click", function (e) {
+  var b = e.target.closest(".tab-btn");
+  if (b) showTab(b.getAttribute("data-tab"));
+});
+document.querySelectorAll("[data-tablink]").forEach(function (a) {
+  a.addEventListener("click", function (e) { e.preventDefault(); showTab(a.getAttribute("data-tablink")); });
+});
+
+/* ================= RENDER ================= */
+function renderStatic() {
+  var dict = STR[lang];
+  document.querySelectorAll("[data-i18n]").forEach(function (el) {
+    var k = el.getAttribute("data-i18n");
+    if (dict[k] !== undefined) el.textContent = dict[k];
+  });
+  document.documentElement.lang = lang === "my" ? "my" : "en";
+  document.getElementById("langToggle").textContent = lang === "my" ? "English" : "မြန်မာ";
+  document.getElementById("footEmail").textContent = CONTACT.email;
+  document.getElementById("footPhone").textContent = CONTACT.phone;
+}
+
+function renderLists() {
+  var i, h;
+  h = "";
+  LISTS.why.forEach(function (w) {
+    h += '<li><span class="icon">' + (ICONS[w.icon] || ICONS.info) + '</span><span><strong>' + t(w.t) + "</strong> " + t(w.d) + "</span></li>";
+  });
+  document.getElementById("whyList").innerHTML = h;
+
+  h = "";
+  LISTS.rhythm.forEach(function (r) {
+    h += "<div><strong>" + t(r.t) + "</strong>" + t(r.d) + "</div>";
+  });
+  document.getElementById("rhythmGrid").innerHTML = h;
+
+  h = "";
+  LISTS.pillars.forEach(function (p) {
+    h += '<div class="card"><div class="icon">' + (ICONS[p.icon] || ICONS.film) + "</div><h3>" + t(p.t) + "</h3><p>" + t(p.d) + "</p></div>";
+  });
+  document.getElementById("pillarGrid").innerHTML = h;
+
+  h = "";
+  LISTS.platforms.forEach(function (p) {
+    var nm = (typeof p.name === "object") ? t(p.name) : p.name;
+    h += '<div class="card"><div class="icon">' + (ICONS[p.icon] || ICONS.globe) + "</div><h3>" + nm + "</h3><p>" + t(p.d) + '</p><span class="meta">' + t(p.m) + "</span></div>";
+  });
+  document.getElementById("platformGrid").innerHTML = h;
+
+  var team = LISTS.team;
+  function node(r, cls) {
+    return '<div class="org-node ' + (cls || "") + '"><div class="r">' + t(r.t) + '</div><div class="d">' + t(r.d) + "</div></div>";
+  }
+  if (team[0]) document.getElementById("orgPresident").innerHTML = '<div class="r">' + t(team[0].t) + '</div><div class="d">' + t(team[0].d) + "</div>";
+  if (team[1]) document.getElementById("orgVp").innerHTML = '<div class="r">' + t(team[1].t) + '</div><div class="d">' + t(team[1].d) + "</div>";
+  h = "";
+  for (i = 2; i < team.length; i++) h += node(team[i], "lead");
+  document.getElementById("orgLeads").innerHTML = h;
+
+  h = "";
+  LISTS.steps.forEach(function (s, idx) {
+    h += '<div class="card"><div class="icon" style="border-radius:50%;background:var(--orange);color:#fff;font-weight:800">' + (idx + 1) + "</div><h3>" + t(s.t) + "</h3><p>" + t(s.d) + "</p></div>";
+  });
+  document.getElementById("stepGrid").innerHTML = h;
+}
+
+function renderAll() { renderStatic(); renderLists(); }
+
+document.getElementById("langToggle").addEventListener("click", function () {
+  lang = lang === "en" ? "my" : "en";
+  try { localStorage.setItem("nma_mc_lang", lang); } catch (e) {}
+  renderAll();
+});
+
+/* ================= FIREBASE CONTENT ================= */
+function applyRemote(doc) {
+  if (!doc) return;
+  if (doc.str) {
+    ["en","my"].forEach(function (l) {
+      if (doc.str[l]) STR[l] = Object.assign({}, STR[l], doc.str[l]);
+    });
+  }
+  ["why","rhythm","pillars","platforms","team","steps"].forEach(function (k) {
+    if (doc[k] && doc[k].length) LISTS[k] = doc[k];
+  });
+  if (doc.contact_email) CONTACT.email = doc.contact_email;
+  if (doc.contact_phone) CONTACT.phone = doc.contact_phone;
+}
+function loadRemote() {
+  if (!db) return;
+  db.collection("nma_mc_site").doc("site").get()
+    .then(function (snap) { if (snap.exists) { applyRemote(snap.data()); renderAll(); } })
+    .catch(function () {});
+}
+
+/* ================= 3D TILT ================= */
+(function () {
+  var wrap = document.querySelector(".tilt-wrap");
+  var card = document.getElementById("idTilt");
+  if (!wrap || !card) return;
+  wrap.addEventListener("mousemove", function (e) {
+    var r = wrap.getBoundingClientRect();
+    var x = (e.clientX - r.left) / r.width - 0.5;
+    var y = (e.clientY - r.top) / r.height - 0.5;
+    card.style.transform = "rotateY(" + (x * 22) + "deg) rotateX(" + (-y * 18) + "deg)";
+    card.querySelector(".glare").style.background =
+      "radial-gradient(circle at " + ((x + 0.5) * 100) + "% " + ((y + 0.5) * 100) + "%, rgba(255,255,255,.35), rgba(255,255,255,0) 55%)";
+  });
+  wrap.addEventListener("mouseleave", function () { card.style.transform = "rotateY(0deg) rotateX(0deg)"; });
+})();
+
+/* ================= REGISTRATION ================= */
+document.getElementById("regForm").addEventListener("submit", function (e) {
+  e.preventDefault();
+  var errBox = document.getElementById("formErr");
+  errBox.style.display = "none";
+  var v = function (id) { return document.getElementById(id).value.trim(); };
+  var data = {
+    name: v("fName"), program: v("fProgram"), year: v("fYear"), interest: v("fInterest"),
+    phone: v("fPhone"), email: v("fEmail"), sample: v("fSample"), why: v("fWhy"),
+    lang: lang, createdAt: db ? firebase.firestore.FieldValue.serverTimestamp() : new Date().toISOString()
+  };
+  if (!data.name || !data.program || !data.year || !data.interest) {
+    errBox.textContent = STR[lang].err_required;
+    errBox.style.display = "block";
+    return;
+  }
+  var btn = document.getElementById("regSubmit");
+  btn.disabled = true;
+  var done = function () {
+    document.getElementById("regForm").style.display = "none";
+    document.getElementById("formOk").style.display = "block";
+  };
+  var fail = function () {
+    btn.disabled = false;
+    errBox.textContent = lang === "my" ? "ပေးပို့ရာတွင် အမှားဖြစ်ပေါ်နေပါသည်။ ထပ်ကြိုးစားပါ။" : "Something went wrong sending. Please try again.";
+    errBox.style.display = "block";
+  };
+  if (db) {
+    db.collection("nma_mc_regs").add(data).then(done).catch(fail);
+  } else { fail(); }
+});
+
+/* ================= INIT ================= */
+renderAll();
+loadRemote();
+(function () {
+  var h = (location.hash || "").replace("#", "");
+  if (tabIds.indexOf(h) >= 0) showTab(h, false);
+})();
 </script>
 </body>
 </html>
